@@ -51,6 +51,8 @@
 }
 
 .login-form {
+  padding-top: 25px;
+  margin: 0 auto;
   max-width: 300px;
 }
 .login-form-forgot {

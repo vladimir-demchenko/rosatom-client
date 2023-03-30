@@ -1,4 +1,4 @@
-import React from 'react';
+import {useState} from 'react';
 import { Routes, Route, Link } from "react-router-dom";
 
 import './App.css';
@@ -14,10 +14,12 @@ import AuthPage from './components/AuthPage';
 import { Button } from '@chakra-ui/react';
 
 function App() {
+  const [isAuth, setIsAuth] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false);
 
   return (
     <div>
-      <nav className='navbar'>
+      {isAuth && <nav className='navbar'>
         <div className='navbar-nav'>
           <li className='nav-item'>
             <a href='/access' className='navbar-brand'>
@@ -36,15 +38,15 @@ function App() {
             <Link to={"/test"} className="nav-link">Test</Link>
           </li>
         </div>
-        <div className='admin-wrapper'>
+        {isAdmin && <div className='admin-wrapper'>
           <Button className='login-item' colorScheme='white' variant='link'>Регистрация</Button>
           <Button className='login-item' colorScheme='white' variant='link'>Сменить пароль</Button>
-        </div>
+        </div>}
         <div className='login-wrapper'>
           <div className='login-item login-email'>temp@rosatom.ru</div>
           <Button className='login-item' colorScheme='white' variant='link'>Выйти</Button>
         </div>
-      </nav>
+      </nav>}
 
       <main className='mainClassname'>
         <Routes>

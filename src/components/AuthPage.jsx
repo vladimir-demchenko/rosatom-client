@@ -22,7 +22,7 @@ const AuthPage = () => {
                     }
                 ]}
             >
-                <Input prefix={<UserOutlined className='site-form-item-icon'/>} placeholder='username'/>
+                <Input prefix={<UserOutlined className='site-form-item-icon'/>} placeholder='Логин'/>
             </Form.Item>
             <Form.Item
                 name='password'
@@ -36,17 +36,14 @@ const AuthPage = () => {
                 <Input 
                     prefix={<LockOutlined className='site-form-item-icon'/>}
                     type='password'
-                    placeholder='Password'
+                    placeholder='Пароль'
                 />
             </Form.Item>
             <Form.Item>
-                <Form.Item name='remember' valuePropName='checked' noStyle>
-                    <Checkbox>Remember me</Checkbox>
-                </Form.Item>
                 <Form.Item>
                     <AButton
                         type='primary' htmlType='submit' className='login-form-button'
-                    >Log in</AButton>
+                    >Войти</AButton>
                 </Form.Item>
             </Form.Item>
         </Form>
