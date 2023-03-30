@@ -1,58 +1,56 @@
-import React, {useState} from 'react';
+import React from 'react';
 import { Routes, Route, Link } from "react-router-dom";
-import "bootstrap/dist/css/bootstrap.min.css";
 
 import './App.css';
 import 'react-data-grid/lib/styles.css';
 
 import AccessTable from "./components/AccessTable";
-import UserTable from './components/UserTable';
 import UserDataGrid from './components/UserDataGrid';
+import IsTable from './components/IsTable';
+import ResourceTable from './components/ResourceTable';
+import RoleTable from './components/RoleTable';
+import Test from './components/Test'
+import { Button } from '@chakra-ui/react';
 
 function App() {
 
-  const [direction, setDirection] = useState('ltr');
-
   return (
     <div>
-      <nav className='navbar navbar-expand navbar-dark bg-dark'>
-        <a href='/access' className='navbar-brand'>
-          RosAtom
-        </a>
-        <div className='navbar-nav mr-auto'>
+      <nav className='navbar'>
+        <div className='navbar-nav'>
+          <li className='nav-item'>
+            <a href='/access' className='navbar-brand'>
+              RosAtom
+            </a>
+          </li>
           <li className='nav-item'>
             <Link to={"/access"} className="nav-link">
-              Access
+              Доступ
             </Link>
           </li>
           <li className='nav-item'>
-            <Link to={"/users"} className="nav-link">Users</Link>
+            <Link to={"/users"} className="nav-link">Пользователи</Link>
           </li>
           <li className='nav-item'>
-            <Link to={"/company"} className="nav-link">Company</Link>
+            <Link to={"/test"} className="nav-link">Test</Link>
           </li>
-          <li className='nav-item'>
-            <Link to={"/status"} className="nav-link">Status</Link>
-          </li>
-          <li className='nav-item'>
-            <Link to={"/Department"} className="nav-link">Department</Link>
-          </li>
-          <li className='nav-item'>
-            <Link to={"/System"} className="nav-link">System</Link>
-          </li>
-          <li className='nav-item'>
-            <Link to={"/role"} className="nav-link">Role</Link>
-          </li>
+        </div>
+        <div className='login-wrapper'>
+          <div className='login-item login-email'>temp@rosatom.ru</div>
+          <Button className='login-item' colorScheme='white' variant='link'>Выйти</Button>
         </div>
       </nav>
 
-      <div className='mainClass'>
+      <main className='mainClassname'>
         <Routes>
-          <Route path="/" element={<UserDataGrid direction={direction}/>}/>
-          <Route path="/access" element={<AccessTable/>}/>
-          <Route path="/users" element={<UserTable/>} />
+          <Route path='/access' element={<AccessTable/>}/>
+          <Route path='/users' element={<UserDataGrid/>}/>
+          <Route path='/is' element={<IsTable/>}/>
+          <Route path='/resource' element={<ResourceTable/>}/>
+          <Route path='/role' element={<RoleTable/>}/>
+          <Route path='/test' element={<Test/>}/>
         </Routes>
-      </div>
+      </main>
     </div>
   );
 }
