@@ -10,6 +10,7 @@ import IsTable from './components/IsTable';
 import ResourceTable from './components/ResourceTable';
 import RoleTable from './components/RoleTable';
 import Test from './components/Test'
+import AuthPage from './components/AuthPage';
 import { Button } from '@chakra-ui/react';
 
 function App() {
@@ -35,6 +36,10 @@ function App() {
             <Link to={"/test"} className="nav-link">Test</Link>
           </li>
         </div>
+        <div className='admin-wrapper'>
+          <Button className='login-item' colorScheme='white' variant='link'>Регистрация</Button>
+          <Button className='login-item' colorScheme='white' variant='link'>Сменить пароль</Button>
+        </div>
         <div className='login-wrapper'>
           <div className='login-item login-email'>temp@rosatom.ru</div>
           <Button className='login-item' colorScheme='white' variant='link'>Выйти</Button>
@@ -43,6 +48,7 @@ function App() {
 
       <main className='mainClassname'>
         <Routes>
+          <Route path='/auth' element={<AuthPage/>}/>
           <Route path='/access' element={<AccessTable/>}/>
           <Route path='/users' element={<UserDataGrid/>}/>
           <Route path='/is' element={<IsTable/>}/>
