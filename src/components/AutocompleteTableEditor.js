@@ -106,7 +106,6 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
       }
 
       this.addHook('beforeKeyDown', event => this.onBeforeKeyDown(event))
-
       choicesListHot.updateSettings({
         colWidths: trimDropdown ? [Handsontable.dom.outerWidth(this.TEXTAREA) - 2] : void 0,
         width: trimDropdown ? Handsontable.dom.outerWidth(this.TEXTAREA) + scrollbarWidth : void 0,
@@ -133,6 +132,8 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
         },
         autoColumnSize: true,
       });
+
+
       if (priv.skipOne) {
         priv.skipOne = false;
       }
@@ -192,6 +193,7 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
 
 
         if (Handsontable.helper.isDefined(selectedValue)) {
+            this.TD.id = selectedValue.id;
             return selectedValue.fullname;
         }
 
@@ -259,6 +261,8 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
 
         this.strippedChoices = choices;
         this.htEditor.loadData(choices);
+        
+        
 
         this.updateDropdownHeight();
         this.flipDropdownIfNeeded();
@@ -350,7 +354,7 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
         const currentDropdownWidth = this.hot.getColWidth(3) + Handsontable.dom.getScrollbarWidth(this.hot.rootDocument) + 100;
         const trimDropdown = this.cellProperties.trimDropdown;
 
-        console.log(currentDropdownWidth)
+
 
         this.htEditor.updateSettings({
             height: this.getDropdownHeight(),
@@ -378,8 +382,6 @@ class AutocompleteTableEditor extends Handsontable.editors.TextEditor {
         const firstRowHeight = this.htEditor.getInstance().getRowHeight(0) || 40;
         const visibleRows = this.cellProperties.visibleRows;
         const columnHeaderHeight = + this.htEditor.view._wt.wtTable.getColumnHeaderHeight() + 15;
-
-        console.log(this.htEditor.view._wt.wtTable.getColumnHeaderHeight());
         
         return this.strippedChoices.length >= visibleRows ? 
         (visibleRows * firstRowHeight + columnHeaderHeight) 

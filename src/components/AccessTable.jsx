@@ -11,6 +11,10 @@ import { accessAPI } from '../services/AccessService';
 import AutocompleteTableEditor from './AutocompleteTableEditor';
 import Handsontable from 'handsontable';
 import { Button, Spinner, useToast } from '@chakra-ui/react';
+import { Divider } from 'antd';
+
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
 // register Handsontable's modules
 registerAllModules();
 
@@ -46,7 +50,24 @@ const AccessTable = () => {
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
   const hotTableComponent = useRef(null);
-  const toast = useToast();
+  const hotEmpty = useRef(null);
+  const [empty] = useState([{
+    id: null,
+    dateRequest: null,
+    document: null,
+    surname: '',
+    firstname: '',
+    lastname: '',
+    personalId: null,
+    IS: null,
+    resource: null,
+    role: null,
+    typeOfAccess: null,
+    comment: null,
+    disableAccess: null,
+    dateDisableAccess: null
+  }]);
+  const [collapsed, setCollapsed] = useState(true);
   let debounceFn = null;
 
   const selectedKeys = ['id', 'fullname', 'personalId', 'email', 'status']
@@ -184,7 +205,7 @@ const AccessTable = () => {
       {data: 'id'},
       {
         type: 'date',
-        dateFormat: 'MM/DD/YYYY',
+        dateFormat: 'DD/MM/YYYY',
         correctFormat: true,
         defaultDate: 'dateRequest',
         datePickerConfig: {
@@ -192,12 +213,13 @@ const AccessTable = () => {
             showWeekNumber: false,
             numberOfMonths: 1,
         },
-        data: 'dateRequest'},
+        data: 'dateRequest'
+      },
       {data: 'document'},
       {
         type: 'autocomplete-table',
         source: sourceUser(users),
-        data: 'User.fullname',
+        data: 'fullname',
         trimDropdown: false,
         visibleRows: 5,
         handsontable: {
@@ -212,7 +234,74 @@ const AccessTable = () => {
           }
         }
       },
-      {data: 'User.personalId'},
+      {data: 'personalId'},
+      {
+        type: 'autocomplete',
+        source: getName(is),
+        data: 'nameIS'
+      },
+      {
+        type: 'autocomplete',
+        source: getName(resource),
+        trimDropdown: false,
+        data: 'nameResource'
+      },
+      {
+        type: 'autocomplete',
+        source: getName(role),
+        data: 'nameRole'
+      },
+      {data: 'typeOfAccess'},
+      {data: 'comment'},
+      {
+        type: 'date',
+        dateFormat: 'MM/DD/YYYY',
+        correctFormat: true,
+        defaultDate: 'dateRequest',
+        datePickerConfig: {
+            firstDay: 1,
+            showWeekNumber: false,
+            numberOfMonths: 1,
+        },
+        data: 'dateDisableAccess'
+      },
+      {data: 'disableAccess'},
+    ]
+  }, [is, resource, role, users])
+
+  const getEmptyColumns = useMemo(() => {
+    return [
+      {
+        type: 'date',
+        dateFormat: 'MM/DD/YYYY',
+        correctFormat: true,
+        defaultDate: 'dateRequest',
+        datePickerConfig: {
+            firstDay: 1,
+            showWeekNumber: false,
+            numberOfMonths: 1,
+        },
+        data: 'dateRequest'},
+      {data: 'document'},
+      {
+        type: 'autocomplete-table',
+        source: sourceUser(users),
+        data: 'fullname',
+        trimDropdown: false,
+        visibleRows: 5,
+        handsontable: {
+          autoColumnSize: true,
+          colHeaders: ['ФИО', 'id', 'Табельный', 'Email', 'Статус'],
+          getValue() {
+            const selection = this.getSelectedLast();
+
+            // Get the manufacturer name of the clicked row and ignore header
+            // coordinates (negative values)
+            return this.getSourceDataAtRow(Math.max(selection[0], 0)).fullname;
+          }
+        }
+      },
+      {data: 'personalId'},
       {
         type: 'autocomplete',
         source: getName(is),
@@ -251,44 +340,104 @@ const AccessTable = () => {
     const hot = hotTableComponent.current.hotInstance;
     const id = hot.getDataAtRow(row)[0];
     const value = {
-        dateRequest: new Date(hot.getDataAtCell(row, 1)).toISOString(),
-        document: hot.getDataAtCell(row, 2),
-        name: hot.getCell(row, 3).id,
-        personalId: hot.getCell(row, 3).id,
-        IS: getName(is).indexOf(hot.getDataAtCell(row, 5)) + 1,
-        resource: getName(resource).indexOf(hot.getDataAtCell(row, 6)) + 1,
-        role: getName(role).indexOf(hot.getDataAtCell(row, 7)) + 1,
-        typeOfAccess: hot.getDataAtCell(row, 8),
-        comment: hot.getDataAtCell(row, 9),
-        disableAccess: hot.getDataAtCell(row, 10),
-        dateDisableAccess: new Date(hot.getDataAtCell(row, 11)).toISOString()
+        dateRequest: hot.getDataAtCell(row, 1) ? hot.getDataAtCell(row, 1) : '',
+        document: hot.getDataAtCell(row, 2) ? hot.getDataAtCell(row, 2) : '',
+        surname: hot.getDataAtCell(row, 3) ? hot.getDataAtCell(row, 3).split(' ')[0] : '',
+        firstname: hot.getDataAtCell(row, 3) ? hot.getDataAtCell(row, 3).split(' ')[1] : '',
+        lastname: hot.getDataAtCell(row, 3) ? hot.getDataAtCell(row, 3).split(' ')[2] : '',
+        personalId: hot.getDataAtCell(row, 4),
+        nameIS: hot.getDataAtCell(row, 5) ? hot.getDataAtCell(row, 5) : '',
+        nameResource: hot.getDataAtCell(row, 6) ? hot.getDataAtCell(row, 6) : '',
+        nameRole: hot.getDataAtCell(row, 7) ? hot.getDataAtCell(row, 7) : '',
+        typeOfAccess: hot.getDataAtCell(row, 8) ? hot.getDataAtCell(row, 8) : '',
+        comment: hot.getDataAtCell(row, 9) ? hot.getDataAtCell(row, 9) : '',
+        disableAccess: hot.getDataAtCell(row, 10) ? hot.getDataAtCell(row, 10) : '',
+        dateDisableAccess: hot.getDataAtCell(row, 11) ? hot.getDataAtCell(row, 11) : ''
     };
-    // console.log(getFIOWithOutId(users), value)
-    // await AccessService.update(id, value)
-    // .then((res) => {
-    //   console.log(hot.getDataAtRow(row).slice(1))
-    //   console.log(res.data)
-    // })
-    // .catch((e) => {
-    //   console.log(e)
-    // })
+    await AccessService.update(id, value)
+    .then((res) => {
+      console.log(res.data)
+    })
+    .catch((e) => {
+      console.log(e)
+    })
+    getAccesses();
+    getUsers();
+    getIS();
+    getResource();
+    getRole();
   }
   
   function addNewRow() {
-    hotTableComponent.current.hotInstance.alter('insert_row_below');
+    const hot = hotEmpty.current.hotInstance;
+    console.log(hot.getSourceData());
+    AccessService.create(hot.getSourceData()[0])
+    .then(res => {
+      console.log(res);
+      hot.clear();
+      getAccesses();
+      getUsers();
+      getIS();
+      getResource();
+      getRole();
+    })
+    .catch(e => {
+      console.log(e);
+    })
   }
 
-  
+  const handleInsertPersonalId = async (id, row) => {
+    const hot = hotTableComponent.current.hotInstance;
+    await UserService.getOne(id)
+    .then(res => {
+      hot.setDataAtCell(row, 4, res.data.personalId);
+    })
+  }
+
+  const exportToXlsx = () => {
+    // Get the table data from Handsontable
+    const data = hotTableComponent.current.hotInstance.getData();
+    
+    // Convert the data to a worksheet
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    
+    // Convert the worksheet to a workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    
+    // Generate the xlsx file and download it
+    const file = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    saveAs(new Blob([file]), 'table_data.xlsx');
+  };
 
   return (
     <>
-    <Button onClick={()=> console.log(hotTableComponent.current.hotInstance.getData())}>Export to XLSX</Button>
-    <Button colorScheme='blue' variant='solid' onClick={addNewRow}>Add new row</Button>
+    <Button onClick={exportToXlsx}>Export to XLSX</Button>
+    <Button colorScheme='blue' variant='solid' onClick={() => setCollapsed(prev => !prev)}>Add new row</Button>
+    {!collapsed && <div>
+      <HotTable
+        data={empty}
+        ref={hotEmpty}
+        rowHeaders={false}
+        colHeaders={['Дата заявки', '№ документа', 'ФИО', 'Табельный', 'ИС', 'Ресурс', 'Роль', 'Тип доступа', 'Комментарий', 'Дата прекращения', 'Приказ']}
+        //height="auto"
+        width="auto"
+        columnHeaderHeight={35}
+        colWidths={[100, 100, 300, 100, 300, 275, 300, 100, 300, 200, 150]}
+        columns={getEmptyColumns}
+        columnSorting={true}
+        filters={true}
+        preventOverflow="horizontal"
+        licenseKey="non-commercial-and-evaluation"
+      />
+      <Button onClick={addNewRow}>Add</Button>
+    </div>}
+    <Divider/>
       <HotTable
         data={access}
         ref={hotTableComponent}
         rowHeaders={false}
-        colHeaders={['id', 'Дата заявки', '№ документа', 'ФИО', 'Табельный', 'ИС', 'Ресурс', 'Роль', 'Тип доступа', 'Комментарий', '№ документа о прекращении доступа', 'Дата прекращения']}
+        colHeaders={['id', 'Дата заявки', '№ документа', 'ФИО', 'Табельный', 'ИС', 'Ресурс', 'Роль', 'Тип доступа', 'Комментарий', 'Дата прекращения', 'Приказ']}
         //height="auto"
         width="auto"
         columnHeaderHeight={35}
@@ -299,7 +448,20 @@ const AccessTable = () => {
         preventOverflow="horizontal"
         afterChange={(changes, source) => {
           if (source === 'edit' && changes[0][1] !== 'id') {
+            console.log(changes);
             changes.forEach(([row, prop, oldValue, newValue]) => {
+              if (oldValue !== newValue) {
+                handleSetUpdate(row);
+              }
+            })
+          }
+
+          if (source === 'edit' && changes[0][1] === 'fullname') {
+            changes.forEach(([row, prop, oldValue, newValue]) => {
+              if (oldValue !== newValue) {
+                const id = hotTableComponent.current.hotInstance.getCell(row, 3).id;
+                handleInsertPersonalId(id, row);
+              }
             })
           }
         }}
@@ -322,12 +484,12 @@ const AccessTable = () => {
           }
         }}
         afterSelection={(row, column, row2, column2, preventScrolling, selectionLayerLevel) => {
-          if (column === 6 && getName(is).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1)) !== null) {
-            hotTableComponent.current.hotInstance.setCellMeta(row, column, 'source', getName(resource.filter(item => item.nameIS === is[getName(is).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1))].name)))
-          }
-          if (column === 7 && getName(resource).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1)) !== null) {
-            hotTableComponent.current.hotInstance.setCellMeta(row, column, 'source', getName(role.filter(item => item.nameResource === resource[getName(resource).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1))].name)))
-          }
+          // if (column === 6 && hotTableComponent.current.hotInstance.getDataAtCell(row, column-1) !== null) {
+          //   hotTableComponent.current.hotInstance.setCellMeta(row, column, 'source', getName(resource.filter(item => item.nameIS === is[getName(is).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1))].name)))
+          // }
+          // if (column === 7 && hotTableComponent.current.hotInstance.getDataAtCell(row, column-1) !== null) {
+          //   hotTableComponent.current.hotInstance.setCellMeta(row, column, 'source', getName(role.filter(item => item.nameResource === resource[getName(resource).indexOf(hotTableComponent.current.hotInstance.getDataAtCell(row, column-1))].name)))
+          // }
         }}
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
       />

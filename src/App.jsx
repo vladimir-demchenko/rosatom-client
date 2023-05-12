@@ -11,19 +11,21 @@ import ResourceTable from './components/ResourceTable';
 import RoleTable from './components/RoleTable';
 import Test from './components/Test'
 import AuthPage from './components/AuthPage';
+import StartPage from './components/StartPage';
+import ModalReg from './components/ModalReg';
 import { Button } from '@chakra-ui/react';
 
 function App() {
-  const [isAuth, setIsAuth] = useState(false)
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuth, setIsAuth] = useState(true)
+  const [isAdmin, setIsAdmin] = useState(true);
 
   return (
     <div>
       {isAuth && <nav className='navbar'>
         <div className='navbar-nav'>
           <li className='nav-item'>
-            <a href='/access' className='navbar-brand'>
-              RosAtom
+            <a href='/' className='navbar-brand'>
+              Консис-ОС
             </a>
           </li>
           <li className='nav-item'>
@@ -35,21 +37,23 @@ function App() {
             <Link to={"/users"} className="nav-link">Пользователи</Link>
           </li>
           <li className='nav-item'>
-            <Link to={"/test"} className="nav-link">Test</Link>
+            <Link to={"/test"} className="nav-link">ИРС</Link>
           </li>
         </div>
-        {isAdmin && <div className='admin-wrapper'>
+        {/* {isAdmin && <div className='admin-wrapper'>
           <Button className='login-item' colorScheme='white' variant='link'>Регистрация</Button>
           <Button className='login-item' colorScheme='white' variant='link'>Сменить пароль</Button>
         </div>}
         <div className='login-wrapper'>
           <div className='login-item login-email'>temp@rosatom.ru</div>
           <Button className='login-item' colorScheme='white' variant='link'>Выйти</Button>
-        </div>
+        </div> */}
       </nav>}
 
       <main className='mainClassname'>
+        {/* <ModalReg/> */}
         <Routes>
+          <Route path='/' element={<StartPage/>}/>
           <Route path='/auth' element={<AuthPage/>}/>
           <Route path='/access' element={<AccessTable/>}/>
           <Route path='/users' element={<UserDataGrid/>}/>

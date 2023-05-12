@@ -4,6 +4,10 @@ const getAll = () => {
     return http.get("/user")
 };
 
+const getOne = (id) => {
+    return http.get(`/user/${id}`);
+};
+
 const update = (id, data) => {
     return http.put(`/user/${id}`, data);
 };
@@ -18,6 +22,7 @@ const deleteUser = (id) => {
 
 const UserService = {
     getAll,
+    getOne,
     update,
     create,
     deleteUser

@@ -5,9 +5,12 @@ import { registerAllModules } from 'handsontable/registry';
 import 'handsontable/dist/handsontable.full.min.css';
 import UserService from '../services/UserService';
 import { Button } from '@chakra-ui/react';
-
+import { Divider } from 'antd';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
+import PositionService from '../services/PositionService';
+import SubdivisionService from '../services/SubdivisionService';
+import DepartmentService from '../services/DepartmentService';
 // register Handsontable's modules
 registerAllModules();
 
@@ -36,6 +39,22 @@ const UserDataGrid = () => {
   const [department, setDepartment] = useState([]);
   const [loading, setLoading] = useState(null);
   const [error, setError] = useState(null);
+  const [collapsed, setCollapsed] = useState(true);
+  const [empty] = useState([{
+    personalId: null,
+    surname: null,
+    name: null,
+    lastname: null,
+    phone: null,
+    email: null,
+    position: null,
+    subdivision: null,
+    department: null,
+    status: null,
+    comment: null,
+  }])
+
+  const hotEmpty = useRef(null);
 
   const hotTableComponent = useRef(null);
   let debounceFn = null;
@@ -52,6 +71,45 @@ const UserDataGrid = () => {
     await UserService.getAll()
     .then(res => {
       setUsers(res.data);
+      setLoading(false);
+    })
+    .catch(e => {
+      setError(true);
+      console.log(e);
+    })
+  }
+  async function getPositions() {
+    setError(false);
+    setLoading(true);
+    await PositionService.getAll()
+    .then(res => {
+      setPosition(res.data);
+      setLoading(false);
+    })
+    .catch(e => {
+      setError(true);
+      console.log(e);
+    })
+  }
+  async function getSubdivisions() {
+    setError(false);
+    setLoading(true);
+    await SubdivisionService.getAll()
+    .then(res => {
+      setSubdivision(res.data);
+      setLoading(false);
+    })
+    .catch(e => {
+      setError(true);
+      console.log(e);
+    })
+  }
+  async function getDepartments() {
+    setError(false);
+    setLoading(true);
+    await DepartmentService.getAll()
+    .then(res => {
+      setDepartment(res.data);
       setLoading(false);
     })
     .catch(e => {
@@ -85,6 +143,9 @@ const UserDataGrid = () => {
 
   useLayoutEffect(() => {
     getUsers();
+    getPositions();
+    getDepartments();
+    getSubdivisions();
   }, [])
 
   useEffect(() => {
@@ -116,20 +177,65 @@ const UserDataGrid = () => {
       { data: 'email' },
       { type: 'autocomplete',
         source: getName(position),
-        data: 'Position.name'
+        data: 'position'
       },
       { type: 'autocomplete',
         source: getName(subdivision),
-        data: 'Subdivision.name'
+        data: 'subdivision'
       },
       { type: 'autocomplete',
         source: getName(department),
-        data: 'Department.name'
+        data: 'department'
       },
       { data: 'status' },
       { data: 'comment' },
-      {},
-      {}
+      {type: 'date',
+      dateFormat: 'MM/DD/YYYY',
+      correctFormat: true,
+      defaultDate: 'dateRequest',
+      datePickerConfig: {
+          firstDay: 1,
+          showWeekNumber: false,
+          numberOfMonths: 1,
+      },
+      data: 'dateDisable'},
+      {data:'document'}
+    ]
+  }, [position, subdivision, department])
+
+  const getEmptyColumns = useMemo(() => {
+    return [
+      { data: 'personalId' },
+      { data: 'surname' },
+      { data: 'name' },
+      { data: 'lastname' },
+      { data: 'phone' },
+      { data: 'email' },
+      { type: 'autocomplete',
+        source: getName(position),
+        data: 'position'
+      },
+      { type: 'autocomplete',
+        source: getName(subdivision),
+        data: 'subdivision'
+      },
+      { type: 'autocomplete',
+        source: getName(department),
+        data: 'department'
+      },
+      { data: 'status' },
+      { data: 'comment' },
+      {type: 'date',
+      dateFormat: 'MM/DD/YYYY',
+      correctFormat: true,
+      defaultDate: 'dateRequest',
+      datePickerConfig: {
+          firstDay: 1,
+          showWeekNumber: false,
+          numberOfMonths: 1,
+      },
+      data: 'dateDisable'},
+      {data:'document'}
     ]
   }, [position, subdivision, department])
 
@@ -144,18 +250,28 @@ const UserDataGrid = () => {
       lastname: hot.getDataAtRow(row)[4],
       phone: hot.getDataAtRow(row)[5],
       email: hot.getDataAtRow(row)[6],
-      position: getName(position).indexOf(hot.getDataAtRow(row)[7]) + 1,
-      subdivision: getName(subdivision).indexOf(hot.getDataAtRow(row)[8]) + 1,
-      department: getName(department).indexOf(hot.getDataAtRow(row)[9]) + 1,
+      position: hot.getDataAtRow(row)[7],
+      subdivision: hot.getDataAtRow(row)[8],
+      department: hot.getDataAtRow(row)[9],
       status: hot.getDataAtRow(row)[10],
       comment: hot.getDataAtRow(row)[11],
     };
 
-    console.log(id, value, getName(position).indexOf(hot.getDataAtRow(row)[7]) + 1);
+    await UserService.update(id, value);
+    getUsers();
   }
   
   function addNewRow() {
-    hotTableComponent.current.hotInstance.alter('insert_row_below');
+    const hot = hotEmpty.current.hotInstance;
+    UserService.create(hot.getSourceData()[0])
+    .then(res => {
+      console.log(res);
+      hot.clear();
+      getUsers();
+    })
+    .catch(e => {
+      console.log(e);
+    })
   }
 
   const exportToXlsx = () => {
@@ -177,30 +293,48 @@ const UserDataGrid = () => {
 
   return (
     <>
-    {console.log()}
     <Button onClick={exportToXlsx}>Export to XLSX</Button>
-    <button onClick={addNewRow}>Add new row</button>
+    <Button colorScheme='blue' variant='solid' onClick={() => setCollapsed(prev => !prev)}>Add new row</Button>
+    {!collapsed && <div>
+      <HotTable
+        data={empty}
+        ref={hotEmpty}
+        rowHeaders={false}
+        colHeaders={['Табельный', 'Фамилия', 'Имя', 'Отчество', 'Телефон', 'E-mail', 'Должность', 'Подразделение', 'Организация', 'Статус', 'Комментарий', 'Дата', 'Приказ']}
+        //height="auto"
+        width="auto"
+        columnHeaderHeight={35}
+        colWidths={[40, 100, 100, 100, 100, 100, 275, 300, 300, 300, 50, 300, 150, 150]}
+        columns={getEmptyColumns}
+        columnSorting={true}
+        filters={true}
+        preventOverflow="horizontal"
+        licenseKey="non-commercial-and-evaluation"
+      />
+      <Button onClick={addNewRow}>Add</Button>
+    </div>}
+    <Divider/>
       <HotTable
         data={users}
         ref={hotTableComponent}
         rowHeaders={false}
         colHeaders={['id', 'Табельный', 'Фамилия', 'Имя', 'Отчество', 'Телефон', 'E-mail', 'Должность', 'Подразделение', 'Организация', 'Статус', 'Комментарий', 'Дата', 'Приказ']}
-        height="auto"
+        
         width="auto"
         columnHeaderHeight={35}
-        colWidths={[40, 100, 100, 100, 100, 100, 275, 300, 300, 300, 50, 300]}
+        colWidths={[40, 100, 100, 100, 100, 100, 275, 300, 300, 300, 50, 300, 150, 150]}
         columns={getColumns}
         columnSorting={true}
         filters={true}
         afterChange={(changes, source) => {
-          if (source === 'edit') {
+          if (source === 'edit' && changes[0][1] !== 'id') {
             changes.forEach(([row, prop, oldValue, newValue]) => {
-              handleSetUpdate(row);
+              if (oldValue !== newValue) {
+                handleSetUpdate(row);
+              }
             })
           }
-        }}
-        afterCreateRow={(index, amount, source) => {
-          hotTableComponent.current.hotInstance.setDataAtCell(index, 0, Math.max.apply(null, hotTableComponent.current.hotInstance.getDataAtCol(0).filter((x) => {return isFinite(x)})) + 1)
+
         }}
         afterGetColHeader={addInput}
         beforeOnCellMouseDown={function(event, coords){
@@ -214,6 +348,8 @@ const UserDataGrid = () => {
         //     console.log(hot.getDataAtCell(row, column+1));
         //   }
         // }} использовать для таблицы доступа, чтобы настроить дерево выбора
+        
+        preventOverflow="horizontal"
         licenseKey="non-commercial-and-evaluation" // for non-commercial use only
       />
     </>
